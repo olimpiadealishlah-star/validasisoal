@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validasi Soal Olimpiade Al Ishlah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Custom scrollbar for tables */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased selection:bg-blue-200">
+
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <img src="https://iili.io/CNu9Bt9.png" alt="Yayasan Al Ishlah" class="h-12 object-contain" onerror="this.src='https://placehold.co/100x50/ffffff/000000?text=Logo+Yayasan'"/>
+                <div class="hidden sm:block border-l-2 border-gray-200 h-10 mx-2"></div>
+                <img src="https://iili.io/n17L7Q2.png" alt="Milad Al Ishlah" class="h-12 object-contain" onerror="this.src='https://placehold.co/100x50/ffffff/000000?text=Logo+Milad'"/>
+                <div class="ml-2 sm:ml-4 text-center sm:text-left">
+                    <h1 class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">Validasi Soal Olimpiade</h1>
+                    <p class="text-xs sm:text-sm text-gray-500">Yayasan Al Ishlah Gorontalo 2026</p>
+                </div>
+            </div>
+            <nav class="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto justify-center">
+                <button onclick="switchTab('form')" id="tab-form" class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white shadow text-blue-700 w-1/2 sm:w-auto">
+                    📝 Isi Instrumen
+                </button>
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 w-1/2 sm:w-auto">
+                    📈 Dashboard
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <div id="toast-container" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 w-11/12 max-w-md hidden">
+        <div id="toast-message" class="p-4 rounded-md shadow-lg border text-sm text-center font-medium"></div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        
+        <div id="view-form" class="fade-in">
+            <form id="validation-form" onsubmit="submitForm(event)" class="space-y-8">
+                
+                <!-- Identitas -->
+                <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">I. Identitas Validator dan Naskah</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Validator *</label>
+                                <input type="text" id="id_nama" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">NIP / NUPTK / No. Identitas</label>
+                                <input type="text" id="id_nip" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Instansi / Unit Kerja *</label>
+                                <input type="text" id="id_instansi" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jabatan dan Bidang Keahlian</label>
+                                <input type="text" id="id_jabatan" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" />
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Validasi *</label>
+                                <input type="date" id="id_tanggal" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran *</label>
+                                <div class="flex flex-wrap gap-4" id="container-mapel">
+                                    <!-- Rendered via JS -->
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Paket Naskah *</label>
+                                <div class="flex flex-wrap gap-4 items-center" id="container-paket">
+                                    <!-- Rendered via JS -->
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <div class="w-1/2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Butir *</label>
+                                    <input type="number" id="id_jumlahButir" min="1" required value="20" onchange="renderBagianB()" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Perangkat yang diterima</label>
+                                <div class="flex flex-wrap gap-4" id="container-perangkat">
+                                    <!-- Rendered via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Bagian A -->
+                <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">BAGIAN A – VALIDASI PAKET SOAL SECARA KESELURUHAN</h2>
+                    <div class="bg-blue-50 p-4 rounded-md border border-blue-100 text-sm mb-6">
+                        <strong>Skala Penilaian:</strong><br/>
+                        4: Sangat sesuai (Seluruh butir memenuhi indikator)<br/>
+                        3: Sesuai (Sebagian besar butir (≥ 75%) memenuhi)<br/>
+                        2: Kurang sesuai (Sebagian butir (50–74%) memenuhi)<br/>
+                        1: Tidak sesuai (Kurang dari 50% butir memenuhi)
+                    </div>
+                    <div id="container-bagian-a" class="space-y-8">
+                        <!-- Rendered via JS -->
+                    </div>
+                </section>
+
+                <!-- Bagian B -->
+                <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-lg font-bold border-b pb-2 mb-4 text-gray-800">BAGIAN B – VALIDASI PER BUTIR SOAL</h2>
+                    <div class="bg-yellow-50 p-4 rounded-md border border-yellow-100 text-sm mb-4">
+                        <strong>Keterangan Kriteria:</strong><br/>
+                        K1 = materi/kisi-kisi; K2 = jenjang SMP/MTs; K3 = pokok soal jelas; K4 = pilihan homogen/pengecoh; K5 = satu kunci benar; K6 = stimulus jelas; K7 = bahasa baku.<br/>
+                        <strong>Checkbox dicentang berarti Terpenuhi (✓), tidak dicentang berarti Tidak Terpenuhi (✗).</strong>
+                    </div>
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-700 bg-gray-100 border-b">
+                                <tr>
+                                    <th class="px-2 py-3 text-center">No</th>
+                                    <th class="px-2 py-3 text-center" title="K1 = sesuai materi">K1</th>
+                                    <th class="px-2 py-3 text-center" title="K2 = sesuai jenjang">K2</th>
+                                    <th class="px-2 py-3 text-center" title="K3 = pokok soal jelas">K3</th>
+                                    <th class="px-2 py-3 text-center" title="K4 = pilihan homogen">K4</th>
+                                    <th class="px-2 py-3 text-center" title="K5 = satu kunci benar">K5</th>
+                                    <th class="px-2 py-3 text-center" title="K6 = stimulus jelas">K6</th>
+                                    <th class="px-2 py-3 text-center" title="K7 = bahasa baku">K7</th>
+                                    <th class="px-2 py-3 text-center">Kesulitan</th>
+                                    <th class="px-2 py-3 text-center">Waktu(m)</th>
+                                    <th class="px-2 py-3 text-center">Keputusan</th>
+                                    <th class="px-2 py-3 text-center">Kunci Valid</th>
+                                    <th class="px-2 py-3">Catatan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-bagian-b">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Rekap & Kesimpulan -->
+                <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Bagian C: Rekap -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
+                        <h2 class="text-lg font-bold border-b pb-2 text-gray-800">BAGIAN C – REKAPITULASI (Otomatis)</h2>
+                        
+                        <div>
+                            <h3 class="font-semibold text-sm mb-2">C.1 Rekapitulasi skor Bagian A</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs text-left border">
+                                    <thead class="bg-gray-50 border-b">
+                                        <tr>
+                                            <th class="px-2 py-2">Aspek</th>
+                                            <th class="px-2 py-2 text-center">Maks</th>
+                                            <th class="px-2 py-2 text-center">Diraih</th>
+                                            <th class="px-2 py-2 text-center">%</th>
+                                            <th class="px-2 py-2">Kategori</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-rekap-a" class="divide-y">
+                                        <!-- Rendered via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-semibold text-sm mb-2">C.2 Rekapitulasi Bagian B</h3>
+                            <div id="container-rekap-b">
+                                <!-- Rendered via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bagian D: Kesimpulan -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+                        <h2 class="text-lg font-bold border-b pb-2 text-gray-800">BAGIAN D – KESIMPULAN DAN SARAN</h2>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-800 mb-2">D.1 Kesimpulan Kelayakan *</label>
+                            <div class="space-y-2" id="container-kesimpulan">
+                                <!-- Rendered via JS -->
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-800 mb-1">D.2 Saran Perbaikan Umum</label>
+                            <textarea id="id_saranUmum" rows="4" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border text-sm" placeholder="Tuliskan saran perbaikan secara keseluruhan di sini..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-800 mb-1">D.3 Butir yang direkomendasikan diganti</label>
+                            <textarea id="id_butirDiganti" rows="3" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border text-sm" placeholder="Misal: Nomor 5 (Konsep salah), Nomor 12..."></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="flex justify-end pt-4 pb-12">
+                    <button type="submit" id="btn-submit" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md font-bold text-lg transition-all transform hover:-translate-y-0.5">
+                        💾 Simpan Hasil Validasi
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="view-dashboard" class="hidden fade-in">
+            <!-- Access Code Form -->
+            <div id="dashboard-login" class="max-w-md mx-auto mt-16 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 text-blue-600 mb-4 border border-blue-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">Akses Terbatas</h2>
+                    <p class="text-gray-500 text-sm mt-2">Masukkan kode akses admin untuk melihat halaman dashboard.</p>
+                </div>
+                <form onsubmit="unlockDashboard(event)" class="space-y-4">
+                    <input type="password" id="access-code" placeholder="Kode Akses" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 border text-center font-medium" required />
+                    <p id="access-error" class="text-red-500 text-sm text-center bg-red-50 p-2 rounded-md border border-red-100 hidden">Kode akses tidak valid.</p>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-sm">
+                        Buka Dashboard
+                    </button>
+                </form>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboard-content" class="hidden space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200 gap-4">
+                    <h2 class="text-xl font-bold text-gray-800">Dashboard Hasil Validasi</h2>
+                    <div class="space-x-2">
+                        <button onclick="fetchDashboardData()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition text-sm font-medium">🔄 Refresh</button>
+                        <button onclick="exportToExcel()" id="btn-export-excel" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm font-medium shadow-sm">📊 Export Excel</button>
+                    </div>
+                </div>
+
+                <div id="dashboard-loading" class="text-center py-12 text-gray-500 hidden">Memuat data...</div>
+                
+                <div id="dashboard-empty" class="text-center py-12 bg-white rounded-lg border border-gray-200 text-gray-500 hidden">Belum ada data validasi.</div>
+
+                <div id="dashboard-table-container" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-gray-700">
+                                <tr>
+                                    <th class="px-4 py-3">Tanggal</th>
+                                    <th class="px-4 py-3">Validator</th>
+                                    <th class="px-4 py-3">Instansi</th>
+                                    <th class="px-4 py-3">Mapel</th>
+                                    <th class="px-4 py-3">Paket</th>
+                                    <th class="px-4 py-3 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-dashboard" class="divide-y divide-gray-200">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // CONFIGURATION
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyExMVnQbe8nOGHmMFk_UPquaYEveklIJ1s8Zu-Kjr0YRKufIXv5JQMJv2_7FgJCakH/exec';
+        const ADMIN_ACCESS_CODE = 'ungguldanberakhlak';
+
+        // CONSTANTS
+        const MAPEL_OPTIONS = ['Matematika', 'PAI', 'IPA', 'Bahasa Inggris'];
+        const PAKET_OPTIONS = ['1', '2', '3', '4', '5'];
+        const PERANGKAT_OPTIONS = ['Naskah soal', 'Kunci jawaban', 'Pembahasan', 'Kisi-kisi'];
+        const KESIMPULAN_OPTIONS = [
+            "Layak digunakan tanpa revisi.",
+            "Layak digunakan dengan revisi sesuai saran.",
+            "Belum layak; perlu revisi besar dan validasi ulang.",
+            "Tidak layak; paket perlu disusun ulang."
+        ];
+
+        const ASPEK_A = [
+            { id: 'A', title: 'A. Aspek Materi dan Kurikulum', items: [
+                { code: 'A1', text: 'Butir sesuai dengan lingkup materi dan kompetensi (kisi-kisi).' },
+                { code: 'A2', text: 'Materi yang diujikan tidak melampaui jenjang SMP/MTs.' },
+                { code: 'A3', text: 'Cakupan topik proporsional dan tidak didominasi satu topik saja.' },
+                { code: 'A4', text: 'Level kognitif butir bervariasi dan menuntut penalaran tingkat tinggi.' },
+                { code: 'A5', text: 'Tingkat kesulitan berjenjang (mudah–sedang–sukar).' },
+                { code: 'A6', text: 'Tidak ada butir yang duplikat atau menguji konsep yang sama.' },
+            ]},
+            { id: 'B', title: 'B. Aspek Konstruksi Soal Pilihan Ganda', items: [
+                { code: 'B1', text: 'Pokok soal dirumuskan jelas dan tegas.' },
+                { code: 'B2', text: 'Pokok soal tidak memberi petunjuk ke kunci jawaban.' },
+                { code: 'B3', text: 'Pokok soal bebas dari pernyataan negatif ganda.' },
+                { code: 'B4', text: 'Pilihan jawaban homogen dan logis dari segi materi.' },
+                { code: 'B5', text: 'Panjang pilihan jawaban relatif sama; angka disusun berurutan.' },
+                { code: 'B6', text: 'Pengecoh berfungsi dengan baik.' },
+                { code: 'B7', text: 'Tidak menggunakan pilihan "semua jawaban benar/salah".' },
+                { code: 'B8', text: 'Setiap butir hanya memiliki satu kunci jawaban yang benar.' },
+                { code: 'B9', text: 'Sebaran posisi kunci jawaban (A–E) proporsional.' },
+            ]},
+            { id: 'C', title: 'C. Aspek Stimulus dan Literasi', items: [
+                { code: 'C1', text: 'Stimulus relevan dengan soal dan fungsional.' },
+                { code: 'C2', text: 'Data, tabel, grafik, dan gambar jelas, terbaca, konsisten.' },
+                { code: 'C3', text: 'Informasi pada stimulus cukup dan tidak berlebihan.' },
+                { code: 'C4', text: 'Konteks lokal Gorontalo dan nilai Islami bermakna.' },
+                { code: 'C5', text: 'Konteks netral dari unsur SARA, gender, status, dan wilayah.' },
+            ]},
+            { id: 'D', title: 'D. Aspek Bahasa', items: [
+                { code: 'D1', text: 'Bahasa sesuai kaidah Ejaan Bahasa Indonesia.' },
+                { code: 'D2', text: 'Bahasa komunikatif dan tidak menimbulkan tafsir ganda.' },
+                { code: 'D3', text: 'Istilah, simbol, dan satuan baku dan konsisten.' },
+                { code: 'D4', text: 'Penulisan angka, mata uang, dan tanda baca konsisten.' },
+                { code: 'D5', text: 'Tidak memuat ungkapan lokal sempit yang tidak dipahami silang daerah.' },
+            ]},
+            { id: 'E', title: 'E. Aspek Kunci Jawaban dan Pembahasan', items: [
+                { code: 'E1', text: 'Kunci jawaban benar untuk seluruh butir (diverifikasi mandiri).' },
+                { code: 'E2', text: 'Pembahasan runtut, logis, dan lengkap.' },
+                { code: 'E3', text: 'Pembahasan konsisten dengan kunci dan bebas salah hitung.' },
+                { code: 'E4', text: 'Penyelesaian alternatif dicatat dan tidak mengubah kunci.' },
+            ]},
+            { id: 'F', title: 'F. Aspek Kelayakan Penyelenggaraan', items: [
+                { code: 'F1', text: 'Jumlah butir dan panjang stimulus sesuai alokasi waktu.' },
+                { code: 'F2', text: 'Sistem penskoran jelas.' },
+                { code: 'F3', text: 'Naskah rapi dan terbaca jelas.' },
+                { code: 'F4', text: 'Soal layak ditampilkan pada platform CBT.' },
+                { code: 'F5', text: 'Soal orisinal, tidak melanggar hak cipta.' },
+            ]},
+            { id: 'G', title: 'G. Aspek Khusus Matematika (Hanya Matematika)', mapelSpecific: 'Matematika', items: [
+                { code: 'G1', text: 'Notasi, simbol, dan satuan matematika ditulis benar.' },
+                { code: 'G2', text: 'Gambar bangun geometri sesuai dengan data pada soal.' },
+                { code: 'G3', text: 'Soal dapat diselesaikan tanpa kalkulator dalam waktu wajar.' },
+                { code: 'G4', text: 'Bilangan dirancang wajar, hasil bersih.' },
+            ]}
+        ];
+
+        // STATE
+        let dashboardData = [];
+        let isDashboardUnlocked = false;
+
+        
+        // Form initialization
+        function initForm() {
+            // Set today's date
+            document.getElementById('id_tanggal').value = new Date().toISOString().split('T')[0];
+
+            // Render Mapel
+            const containerMapel = document.getElementById('container-mapel');
+            containerMapel.innerHTML = MAPEL_OPTIONS.map(m => `
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="mapel" required value="${m}" onchange="handleMapelChange()" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+                    <span class="ml-2 text-sm text-gray-700">${m}</span>
+                </label>
+            `).join('');
+
+            // Render Paket
+            const containerPaket = document.getElementById('container-paket');
+            let paketHtml = PAKET_OPTIONS.map(p => `
+                <label class="flex items-center cursor-pointer">
+                    <input type="radio" name="paket" required value="${p}" onchange="handlePaketChange()" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+                    <span class="ml-2 text-sm text-gray-700">${p}</span>
+                </label>
+            `).join('');
+            paketHtml += `
+                <div class="flex items-center gap-2">
+                    <input type="radio" name="paket" value="Lainnya" onchange="handlePaketChange()" id="radio_paket_lainnya" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+                    <span class="text-sm text-gray-700">Lainnya:</span>
+                    <input type="text" id="id_paketLainnya" disabled class="border-b border-gray-400 focus:border-blue-500 outline-none px-1 py-0.5 text-sm w-24 bg-transparent disabled:opacity-50" />
+                </div>
+            `;
+            containerPaket.innerHTML = paketHtml;
+
+            // Render Perangkat
+            const containerPerangkat = document.getElementById('container-perangkat');
+            containerPerangkat.innerHTML = PERANGKAT_OPTIONS.map(p => `
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" name="perangkat" value="${p}" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300" />
+                    <span class="ml-2 text-sm text-gray-700">${p}</span>
+                </label>
+            `).join('');
+
+            // Render Kesimpulan
+            const containerKesimpulan = document.getElementById('container-kesimpulan');
+            containerKesimpulan.innerHTML = KESIMPULAN_OPTIONS.map(k => `
+                <label class="flex items-start cursor-pointer group">
+                    <input type="radio" name="kelayakan" required value="${k}" class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
+                    <span class="ml-2 text-sm text-gray-700 group-hover:text-black">${k}</span>
+                </label>
+            `).join('');
+
+            renderBagianA();
+            renderBagianB();
+        }
+
+        // Handle Mapel change to toggle Aspect G
+        function handleMapelChange() {
+            renderBagianA();
+            calculateRekapA();
+        }
+
+        // Handle Paket text input toggle
+        function handlePaketChange() {
+            const isLainnya = document.getElementById('radio_paket_lainnya').checked;
+            const inputLainnya = document.getElementById('id_paketLainnya');
+            inputLainnya.disabled = !isLainnya;
+            if(isLainnya) inputLainnya.focus();
+        }
+
+
+        function renderBagianA() {
+            const container = document.getElementById('container-bagian-a');
+            const selectedMapel = document.querySelector('input[name="mapel"]:checked')?.value;
+            let html = '';
+
+            ASPEK_A.forEach(aspek => {
+                if (aspek.id === 'G' && selectedMapel !== 'Matematika') return; // Skip G if not Math
+
+                let tableRows = aspek.items.map(item => `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-2 text-center font-medium">${item.code}</td>
+                        <td class="px-4 py-2 text-gray-600 text-xs">${item.text}</td>
+                        ${[1, 2, 3, 4].map(score => `
+                            <td class="px-2 py-2 text-center">
+                                <input type="radio" name="score_${item.code}" value="${score}" onchange="calculateRekapA()" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 cursor-pointer" required />
+                            </td>
+                        `).join('')}
+                        <td class="px-4 py-2">
+                            <textarea id="note_${item.code}" class="w-full text-xs border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1 border" rows="1" placeholder="Saran..."></textarea>
+                        </td>
+                    </tr>
+                `).join('');
+
+                html += `
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-gray-100 px-4 py-2 font-bold text-gray-700 text-sm">${aspek.title}</div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-gray-700 bg-gray-50 uppercase border-b">
+                                    <tr>
+                                        <th class="px-4 py-3 w-12 text-center">Kode</th>
+                                        <th class="px-4 py-3">Indikator</th>
+                                        <th class="px-2 py-3 text-center">1</th>
+                                        <th class="px-2 py-3 text-center">2</th>
+                                        <th class="px-2 py-3 text-center">3</th>
+                                        <th class="px-2 py-3 text-center">4</th>
+                                        <th class="px-4 py-3 w-48">Catatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Re-inject HTML only if structure changes, but since this destroys input values, 
+            // we should be careful. In this vanilla JS version, we re-render entirely when Mapel changes.
+            container.innerHTML = html;
+            calculateRekapA();
+        }
+
+        function renderBagianB() {
+            const tbody = document.getElementById('tbody-bagian-b');
+            const num = parseInt(document.getElementById('id_jumlahButir').value) || 20;
+            
+            // Keep existing values if rows already exist
+            let currentData = [];
+            for (let i = 1; i <= tbody.children.length; i++) {
+                if(!document.getElementById(`b_k1_${i}`)) break;
+                currentData.push({
+                    k1: document.getElementById(`b_k1_${i}`).checked,
+                    k2: document.getElementById(`b_k2_${i}`).checked,
+                    k3: document.getElementById(`b_k3_${i}`).checked,
+                    k4: document.getElementById(`b_k4_${i}`).checked,
+                    k5: document.getElementById(`b_k5_${i}`).checked,
+                    k6: document.getElementById(`b_k6_${i}`).value,
+                    k7: document.getElementById(`b_k7_${i}`).checked,
+                    kesulitan: document.getElementById(`b_kesulitan_${i}`).value,
+                    waktu: document.getElementById(`b_waktu_${i}`).value,
+                    keputusan: document.getElementById(`b_keputusan_${i}`).value,
+                    kunci: document.getElementById(`b_kunci_${i}`).value,
+                    catatan: document.getElementById(`b_catatan_${i}`).value
+                });
+            }
+
+            let html = '';
+            for (let i = 1; i <= num; i++) {
+                let d = currentData[i-1] || { k1:true, k2:true, k3:true, k4:true, k5:true, k6:'✓', k7:true, kesulitan:'S', waktu:'2', keputusan:'L', kunci:'', catatan:'' };
+                
+                html += `
+                    <tr class="border-b hover:bg-gray-50 b-row">
+                        <td class="px-2 py-2 text-center font-medium">${i}</td>
+                        ${['k1','k2','k3','k4','k5','k7'].map(k => `
+                            <td class="px-2 py-2 text-center">
+                                <input type="checkbox" id="b_${k}_${i}" ${d[k] ? 'checked' : ''} onchange="calculateRekapB()" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer border-gray-300" />
+                            </td>
+                        `).join('')}
+                        <td class="px-2 py-2 text-center">
+                            <select id="b_k6_${i}" onchange="calculateRekapB()" class="border border-gray-300 rounded shadow-sm text-xs p-1 focus:ring-blue-500 cursor-pointer">
+                                <option value="✓" ${d.k6==='✓'?'selected':''}>✓</option>
+                                <option value="✗" ${d.k6==='✗'?'selected':''}>✗</option>
+                                <option value="-" ${d.k6==='-'?'selected':''}>-</option>
+                            </select>
+                        </td>
+                        <td class="px-2 py-2 text-center">
+                            <select id="b_kesulitan_${i}" onchange="calculateRekapB()" class="border border-gray-300 rounded shadow-sm text-xs p-1 focus:ring-blue-500 cursor-pointer">
+                                <option value="M" ${d.kesulitan==='M'?'selected':''}>M</option>
+                                <option value="S" ${d.kesulitan==='S'?'selected':''}>S</option>
+                                <option value="K" ${d.kesulitan==='K'?'selected':''}>K</option>
+                            </select>
+                        </td>
+                        <td class="px-2 py-2 text-center">
+                            <input type="number" id="b_waktu_${i}" value="${d.waktu}" min="1" onchange="calculateRekapB()" class="w-12 border border-gray-300 rounded shadow-sm text-xs p-1 text-center focus:ring-blue-500" />
+                        </td>
+                        <td class="px-2 py-2 text-center">
+                            <select id="b_keputusan_${i}" onchange="calculateRekapB()" class="border border-gray-300 rounded shadow-sm text-xs p-1 focus:ring-blue-500 cursor-pointer font-bold ${d.keputusan==='L'?'text-green-600':d.keputusan==='R'?'text-yellow-600':'text-red-600'}">
+                                <option value="L" ${d.keputusan==='L'?'selected':''}>L</option>
+                                <option value="R" ${d.keputusan==='R'?'selected':''}>R</option>
+                                <option value="G" ${d.keputusan==='G'?'selected':''}>G</option>
+                            </select>
+                        </td>
+                        <td class="px-2 py-2 text-center">
+                            <input type="text" id="b_kunci_${i}" value="${d.kunci}" maxlength="1" class="w-8 border border-gray-300 rounded shadow-sm text-xs p-1 text-center uppercase focus:ring-blue-500" />
+                        </td>
+                        <td class="px-2 py-2">
+                            <input type="text" id="b_catatan_${i}" value="${d.catatan}" placeholder="Saran..." class="w-full min-w-[100px] border border-gray-300 rounded shadow-sm text-xs p-1 focus:ring-blue-500" />
+                        </td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+            
+            // Add color changing logic to Keputusan select
+            for(let i=1; i<=num; i++){
+                document.getElementById(`b_keputusan_${i}`).addEventListener('change', function(e) {
+                    this.className = `border border-gray-300 rounded shadow-sm text-xs p-1 focus:ring-blue-500 cursor-pointer font-bold ${this.value === 'L' ? 'text-green-600' : this.value === 'R' ? 'text-yellow-600' : 'text-red-600'}`;
+                });
+            }
+            calculateRekapB();
+        }
+
+
+        function calculateRekapA() {
+            const selectedMapel = document.querySelector('input[name="mapel"]:checked')?.value;
+            let totalScore = 0;
+            let totalMaxScore = 0;
+            let html = '';
+
+            ASPEK_A.forEach(aspek => {
+                if (aspek.id === 'G' && selectedMapel !== 'Matematika') return;
+
+                const numIndicators = aspek.items.length;
+                const maxScore = numIndicators * 4;
+                let scoreObtained = 0;
+
+                aspek.items.forEach(item => {
+                    const radio = document.querySelector(`input[name="score_${item.code}"]:checked`);
+                    if (radio) scoreObtained += parseInt(radio.value);
+                });
+
+                const percentage = maxScore > 0 ? ((scoreObtained / maxScore) * 100).toFixed(2) : 0;
+                let category = '';
+                if (percentage >= 85) category = 'Sangat valid';
+                else if (percentage >= 70) category = 'Valid';
+                else if (percentage >= 55) category = 'Cukup valid';
+                else category = 'Kurang valid';
+
+                html += `
+                    <tr>
+                        <td class="px-2 py-1 truncate max-w-[150px]" title="${aspek.title}">${aspek.title}</td>
+                        <td class="px-2 py-1 text-center">${maxScore}</td>
+                        <td class="px-2 py-1 text-center font-medium">${scoreObtained}</td>
+                        <td class="px-2 py-1 text-center">${percentage}%</td>
+                        <td class="px-2 py-1">${category}</td>
+                    </tr>
+                `;
+
+                totalScore += scoreObtained;
+                totalMaxScore += maxScore;
+            });
+
+            const totalPercentage = totalMaxScore > 0 ? ((totalScore / totalMaxScore) * 100).toFixed(2) : 0;
+            html += `
+                <tr class="bg-blue-50 font-bold">
+                    <td class="px-2 py-2">TOTAL</td>
+                    <td class="px-2 py-2 text-center">${totalMaxScore}</td>
+                    <td class="px-2 py-2 text-center">${totalScore}</td>
+                    <td class="px-2 py-2 text-center">${totalPercentage}%</td>
+                    <td class="px-2 py-2"></td>
+                </tr>
+            `;
+
+            document.getElementById('tbody-rekap-a').innerHTML = html;
+        }
+
+        function calculateRekapB() {
+            const num = parseInt(document.getElementById('id_jumlahButir').value) || 20;
+            const stats = { L: 0, R: 0, G: 0, totalWaktu: 0 };
+            
+            for(let i=1; i<=num; i++) {
+                const kep = document.getElementById(`b_keputusan_${i}`)?.value;
+                const waktu = parseInt(document.getElementById(`b_waktu_${i}`)?.value) || 0;
+                if(kep) stats[kep]++;
+                stats.totalWaktu += waktu;
+            }
+
+            const total = num || 1;
+            const pL = ((stats.L/total)*100).toFixed(1);
+            const pR = ((stats.R/total)*100).toFixed(1);
+            const pG = ((stats.G/total)*100).toFixed(1);
+
+            document.getElementById('container-rekap-b').innerHTML = `
+                <div class="grid grid-cols-3 gap-2 text-sm bg-gray-50 p-3 rounded border">
+                    <div class="text-center">
+                        <div class="font-bold text-green-600">Layak (L)</div>
+                        <div>${stats.L} (${pL}%)</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="font-bold text-yellow-600">Revisi (R)</div>
+                        <div>${stats.R} (${pR}%)</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="font-bold text-red-600">Ganti (G)</div>
+                        <div>${stats.G} (${pG}%)</div>
+                    </div>
+                </div>
+                <div class="mt-3 text-sm">
+                    Perkiraan total waktu pengerjaan: <strong>${stats.totalWaktu} menit</strong>
+                </div>
+            `;
+        }
+
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const msgEl = document.getElementById('toast-message');
+            
+            msgEl.textContent = message;
+            if(type === 'error') {
+                msgEl.className = 'p-4 rounded-md shadow-lg border text-sm text-center font-bold bg-red-100 border-red-400 text-red-700';
+            } else {
+                msgEl.className = 'p-4 rounded-md shadow-lg border text-sm text-center font-bold bg-green-100 border-green-400 text-green-700';
+            }
+            
+            container.classList.remove('hidden');
+            setTimeout(() => { container.classList.add('hidden'); }, 4000);
+        }
+
+        async function submitForm(e) {
+            e.preventDefault();
+            const btnSubmit = document.getElementById('btn-submit');
+            
+            // Collect Identitas
+            const identitas = {
+                nama: document.getElementById('id_nama').value,
+                nip: document.getElementById('id_nip').value,
+                instansi: document.getElementById('id_instansi').value,
+                jabatan: document.getElementById('id_jabatan').value,
+                tanggal: document.getElementById('id_tanggal').value,
+                mapel: document.querySelector('input[name="mapel"]:checked')?.value || '',
+                paket: document.querySelector('input[name="paket"]:checked')?.value || '',
+                paketLainnya: document.getElementById('id_paketLainnya').value,
+                jenjang: 'SMP/MTs sederajat – pilihan ganda (A–E)',
+                jumlahButir: parseInt(document.getElementById('id_jumlahButir').value) || 20,
+                perangkat: Array.from(document.querySelectorAll('input[name="perangkat"]:checked')).map(el => el.value)
+            };
+
+            // Collect Bagian A
+            const bagianA = { scores: {}, notes: {} };
+            ASPEK_A.forEach(aspek => {
+                if (aspek.id === 'G' && identitas.mapel !== 'Matematika') return;
+                aspek.items.forEach(item => {
+                    const score = document.querySelector(`input[name="score_${item.code}"]:checked`)?.value;
+                    const note = document.getElementById(`note_${item.code}`)?.value;
+                    if (score) bagianA.scores[item.code] = score;
+                    if (note) bagianA.notes[item.code] = note;
+                });
+            });
+
+            // Collect Bagian B
+            const bagianB = [];
+            for (let i = 1; i <= identitas.jumlahButir; i++) {
+                bagianB.push({
+                    no: i,
+                    k1: document.getElementById(`b_k1_${i}`).checked,
+                    k2: document.getElementById(`b_k2_${i}`).checked,
+                    k3: document.getElementById(`b_k3_${i}`).checked,
+                    k4: document.getElementById(`b_k4_${i}`).checked,
+                    k5: document.getElementById(`b_k5_${i}`).checked,
+                    k6: document.getElementById(`b_k6_${i}`).value,
+                    k7: document.getElementById(`b_k7_${i}`).checked,
+                    kesulitan: document.getElementById(`b_kesulitan_${i}`).value,
+                    waktu: document.getElementById(`b_waktu_${i}`).value,
+                    keputusan: document.getElementById(`b_keputusan_${i}`).value,
+                    kunciValidator: document.getElementById(`b_kunci_${i}`).value.toUpperCase(),
+                    catatan: document.getElementById(`b_catatan_${i}`).value
+                });
+            }
+
+            // Collect Kesimpulan
+            const kesimpulan = {
+                kelayakan: document.querySelector('input[name="kelayakan"]:checked')?.value || '',
+                saranUmum: document.getElementById('id_saranUmum').value,
+                butirDiganti: document.getElementById('id_butirDiganti').value
+            };
+
+            const payload = { identitas, bagianA, bagianB, kesimpulan };
+
+            try {
+                btnSubmit.disabled = true;
+                btnSubmit.innerText = 'Menyimpan Data...';
+                btnSubmit.classList.add('opacity-75');
+
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast('✅ Data berhasil disimpan!');
+                    window.scrollTo({top: 0, behavior: 'smooth'});
+                    document.getElementById('validation-form').reset();
+                    initForm(); // re-init defaults
+                } else {
+                    showToast('Gagal: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                showToast('Error koneksi. Pastikan URL Script benar.', 'error');
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = '💾 Simpan Hasil Validasi';
+                btnSubmit.classList.remove('opacity-75');
+            }
+        }
+
+
+        function switchTab(tabId) {
+            document.getElementById('view-form').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            
+            document.getElementById('tab-form').className = 'px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 w-1/2 sm:w-auto';
+            document.getElementById('tab-dashboard').className = 'px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 w-1/2 sm:w-auto';
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).className = 'px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white shadow text-blue-700 w-1/2 sm:w-auto';
+
+            if(tabId === 'dashboard' && isDashboardUnlocked) {
+                fetchDashboardData();
+            }
+        }
+
+        function unlockDashboard(e) {
+            e.preventDefault();
+            const code = document.getElementById('access-code').value;
+            const err = document.getElementById('access-error');
+            
+            if (code === ADMIN_ACCESS_CODE) {
+                isDashboardUnlocked = true;
+                document.getElementById('dashboard-login').classList.add('hidden');
+                document.getElementById('dashboard-content').classList.remove('hidden');
+                fetchDashboardData();
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        async function fetchDashboardData() {
+            const tbody = document.getElementById('tbody-dashboard');
+            const loading = document.getElementById('dashboard-loading');
+            const empty = document.getElementById('dashboard-empty');
+            const container = document.getElementById('dashboard-table-container');
+            const btnExcel = document.getElementById('btn-export-excel');
+            
+            container.classList.add('hidden');
+            empty.classList.add('hidden');
+            loading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getData`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    dashboardData = result.data;
+                } else {
+                    dashboardData = [];
+                }
+            } catch (error) {
+                console.warn('Backend fetch failed, using demo data.', error);
+                dashboardData = [
+                    { "Nama Validator": "Demo User, M.Pd", "Instansi": "Universitas Negeri Gorontalo", "Mata Pelajaran": "Matematika", "Paket Naskah": "1", "Jumlah Butir": 20, "Tanggal Validasi": new Date().toISOString() },
+                    { "Nama Validator": "Budi Santoso, S.Pd", "Instansi": "SMPN 1 Gorontalo", "Mata Pelajaran": "IPA", "Paket Naskah": "2", "Jumlah Butir": 30, "Tanggal Validasi": new Date().toISOString() }
+                ];
+            }
+
+            loading.classList.add('hidden');
+            
+            if(dashboardData.length === 0) {
+                empty.classList.remove('hidden');
+                btnExcel.disabled = true;
+                btnExcel.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnExcel.disabled = false;
+                btnExcel.classList.remove('opacity-50', 'cursor-not-allowed');
+                container.classList.remove('hidden');
+                
+                tbody.innerHTML = dashboardData.map((row, idx) => {
+                    const dateStr = row["Tanggal Validasi"] ? new Date(row["Tanggal Validasi"]).toLocaleDateString('id-ID') : '-';
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3">${dateStr}</td>
+                            <td class="px-4 py-3 font-medium">${row["Nama Validator"] || '-'}</td>
+                            <td class="px-4 py-3">${row.Instansi || '-'}</td>
+                            <td class="px-4 py-3">${row["Mata Pelajaran"] || '-'}</td>
+                            <td class="px-4 py-3 text-center">${row["Paket Naskah"] || row["Paket Lainnya"] || '-'}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="exportToPDF(${idx})" class="px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs hover:bg-red-100 transition font-bold shadow-sm">
+                                    📄 PDF
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function exportToExcel() {
+            if (dashboardData.length === 0) return;
+            try {
+                showToast('Mengekspor ke Excel...', 'success');
+                const ws = XLSX.utils.json_to_sheet(dashboardData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Rekap Validasi");
+                XLSX.writeFile(wb, "Rekap_Validasi_Olimpiade.xlsx");
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal mengekspor Excel.', 'error');
+            }
+        }
+
+        function exportToPDF(index) {
+            const dataRow = dashboardData[index];
+            if(!dataRow) return;
+
+            try {
+                showToast('Menghasilkan PDF...', 'success');
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'pt', 'a4');
+                const margins = { top: 40, bottom: 40, left: 40, right: 40 };
+                
+                // Header
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text("HASIL VALIDASI INSTRUMEN", 297, margins.top, { align: 'center' });
+                doc.text("OLIMPIADE AL ISHLAH GORONTALO 2026", 297, margins.top + 20, { align: 'center' });
+                
+                // Content
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                let yPos = margins.top + 60;
+                
+                const identitasData = [
+                    ["Nama Validator", dataRow["Nama Validator"] || "-"],
+                    ["Instansi", dataRow["Instansi"] || "-"],
+                    ["Tanggal Validasi", dataRow["Tanggal Validasi"] ? new Date(dataRow["Tanggal Validasi"]).toLocaleDateString('id-ID') : "-"],
+                    ["Mata Pelajaran", dataRow["Mata Pelajaran"] || "-"],
+                    ["Paket Naskah", dataRow["Paket Naskah"] || dataRow["Paket Lainnya"] || "-"],
+                    ["Jumlah Butir", (dataRow["Jumlah Butir"] || "-").toString()]
+                ];
+
+                doc.autoTable({
+                    startY: yPos,
+                    body: identitasData,
+                    theme: 'plain',
+                    styles: { fontSize: 10, cellPadding: 4, textColor: [40, 40, 40] },
+                    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 120 } }
+                });
+
+                yPos = doc.lastAutoTable.finalY + 25;
+
+                // Additional Info
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(9);
+                doc.text("Catatan: Ini adalah dokumen ringkasan hasil validasi. Detail evaluasi per butir", margins.left, yPos);
+                doc.text("dan catatan spesifik tersimpan di dalam sistem database panitia pusat.", margins.left, yPos + 12);
+                
+                // Signatures
+                yPos += 70;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                const dateStr = new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
+                doc.text(`Gorontalo, ${dateStr}`, 400, yPos);
+                doc.text("Validator,", 400, yPos + 15);
+                doc.text(`( ${dataRow["Nama Validator"] || "__________________________"} )`, 400, yPos + 75);
+
+                // Save
+                const safeName = (dataRow["Nama Validator"] || "Unknown").replace(/[^a-zA-Z0-9]/g, '_');
+                doc.save(`Validasi_${dataRow["Mata Pelajaran"]}_${safeName}.pdf`);
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal memuat library PDF.', 'error');
+            }
+        }
+
+        // Initialize on load
+        window.onload = initForm;
+
+    </script>
+</body>
+</html>
