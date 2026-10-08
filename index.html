@@ -48,6 +48,22 @@
         <div id="toast-message" class="p-4 rounded-md shadow-lg border text-sm text-center font-medium"></div>
     </div>
 
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg max-w-sm w-full p-6 text-center fade-in">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Hapus Data Validasi?</h3>
+            <p class="text-sm text-gray-500 mb-6">Tindakan ini tidak dapat dibatalkan. Semua evaluasi butir soal terkait validator ini akan dihapus permanen dari database.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium text-sm shadow-sm">Batal</button>
+                <button onclick="executeDelete()" id="btn-confirm-delete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium text-sm shadow-sm">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
     <main class="max-w-7xl mx-auto px-4 py-8">
         
         <div id="view-form" class="fade-in">
@@ -288,7 +304,7 @@
     <footer class="mt-8 py-6 text-center border-t border-gray-200 bg-white">
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-sm text-gray-500">
-                @Rahmat Djafar - <span class="font-semibold text-gray-700">2026</span>
+                Pengembang Instrumen Validasi: <span class="font-semibold text-gray-700">Rahmat Djafar, S.Pd., Gr</span>
             </p>
         </div>
     </footer>
@@ -367,24 +383,18 @@
         // STATE
         let dashboardData = [];
         let isDashboardUnlocked = false;
+        let targetDeleteId = null;
 
-        
-        // Form initialization
         function initForm() {
-            // Set today's date
             document.getElementById('id_tanggal').value = new Date().toISOString().split('T')[0];
 
-            // Render Mapel
-            const containerMapel = document.getElementById('container-mapel');
-            containerMapel.innerHTML = MAPEL_OPTIONS.map(m => `
+            document.getElementById('container-mapel').innerHTML = MAPEL_OPTIONS.map(m => `
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" name="mapel" required value="${m}" onchange="handleMapelChange()" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
                     <span class="ml-2 text-sm text-gray-700">${m}</span>
                 </label>
             `).join('');
 
-            // Render Paket
-            const containerPaket = document.getElementById('container-paket');
             let paketHtml = PAKET_OPTIONS.map(p => `
                 <label class="flex items-center cursor-pointer">
                     <input type="radio" name="paket" required value="${p}" onchange="handlePaketChange()" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
@@ -398,20 +408,16 @@
                     <input type="text" id="id_paketLainnya" disabled class="border-b border-gray-400 focus:border-blue-500 outline-none px-1 py-0.5 text-sm w-24 bg-transparent disabled:opacity-50" />
                 </div>
             `;
-            containerPaket.innerHTML = paketHtml;
+            document.getElementById('container-paket').innerHTML = paketHtml;
 
-            // Render Perangkat
-            const containerPerangkat = document.getElementById('container-perangkat');
-            containerPerangkat.innerHTML = PERANGKAT_OPTIONS.map(p => `
+            document.getElementById('container-perangkat').innerHTML = PERANGKAT_OPTIONS.map(p => `
                 <label class="flex items-center cursor-pointer">
                     <input type="checkbox" name="perangkat" value="${p}" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300" />
                     <span class="ml-2 text-sm text-gray-700">${p}</span>
                 </label>
             `).join('');
 
-            // Render Kesimpulan
-            const containerKesimpulan = document.getElementById('container-kesimpulan');
-            containerKesimpulan.innerHTML = KESIMPULAN_OPTIONS.map(k => `
+            document.getElementById('container-kesimpulan').innerHTML = KESIMPULAN_OPTIONS.map(k => `
                 <label class="flex items-start cursor-pointer group">
                     <input type="radio" name="kelayakan" required value="${k}" class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" />
                     <span class="ml-2 text-sm text-gray-700 group-hover:text-black">${k}</span>
@@ -422,13 +428,11 @@
             renderBagianB();
         }
 
-        // Handle Mapel change to toggle Aspect G
         function handleMapelChange() {
             renderBagianA();
             calculateRekapA();
         }
 
-        // Handle Paket text input toggle
         function handlePaketChange() {
             const isLainnya = document.getElementById('radio_paket_lainnya').checked;
             const inputLainnya = document.getElementById('id_paketLainnya');
@@ -436,14 +440,14 @@
             if(isLainnya) inputLainnya.focus();
         }
 
-
         function renderBagianA() {
             const container = document.getElementById('container-bagian-a');
-            const selectedMapel = document.querySelector('input[name="mapel"]:checked')?.value;
+            const mapelRadio = document.querySelector('input[name="mapel"]:checked');
+            const selectedMapel = mapelRadio ? mapelRadio.value : '';
             let html = '';
 
             ASPEK_A.forEach(aspek => {
-                if (aspek.id === 'G' && selectedMapel !== 'Matematika') return; // Skip G if not Math
+                if (aspek.id === 'G' && selectedMapel !== 'Matematika') return;
 
                 let tableRows = aspek.items.map(item => `
                     <tr class="border-b hover:bg-gray-50">
@@ -483,8 +487,6 @@
                 `;
             });
             
-            // Re-inject HTML only if structure changes, but since this destroys input values, 
-            // we should be careful. In this vanilla JS version, we re-render entirely when Mapel changes.
             container.innerHTML = html;
             calculateRekapA();
         }
@@ -493,7 +495,6 @@
             const tbody = document.getElementById('tbody-bagian-b');
             const num = parseInt(document.getElementById('id_jumlahButir').value) || 20;
             
-            // Keep existing values if rows already exist
             let currentData = [];
             for (let i = 1; i <= tbody.children.length; i++) {
                 if(!document.getElementById(`b_k1_${i}`)) break;
@@ -560,18 +561,20 @@
             }
             tbody.innerHTML = html;
             
-            // Add color changing logic to Keputusan select
             for(let i=1; i<=num; i++){
-                document.getElementById(`b_keputusan_${i}`).addEventListener('change', function(e) {
-                    this.className = `border border-gray-300 rounded shadow-sm text-xs p-1 focus:ring-blue-500 cursor-pointer font-bold ${this.value === 'L' ? 'text-green-600' : this.value === 'R' ? 'text-yellow-600' : 'text-red-600'}`;
-                });
+                const kep = document.getElementById(`b_keputusan_${i}`);
+                if(kep) {
+                    kep.addEventListener('change', function(e) {
+                        this.className = `border border-gray-300 rounded shadow-sm text-xs p-1 focus:ring-blue-500 cursor-pointer font-bold ${this.value === 'L' ? 'text-green-600' : this.value === 'R' ? 'text-yellow-600' : 'text-red-600'}`;
+                    });
+                }
             }
             calculateRekapB();
         }
 
-
         function calculateRekapA() {
-            const selectedMapel = document.querySelector('input[name="mapel"]:checked')?.value;
+            const mapelRadio = document.querySelector('input[name="mapel"]:checked');
+            const selectedMapel = mapelRadio ? mapelRadio.value : '';
             let totalScore = 0;
             let totalMaxScore = 0;
             let html = '';
@@ -628,10 +631,16 @@
             const stats = { L: 0, R: 0, G: 0, totalWaktu: 0 };
             
             for(let i=1; i<=num; i++) {
-                const kep = document.getElementById(`b_keputusan_${i}`)?.value;
-                const waktu = parseInt(document.getElementById(`b_waktu_${i}`)?.value) || 0;
-                if(kep) stats[kep]++;
-                stats.totalWaktu += waktu;
+                const kepEl = document.getElementById(`b_keputusan_${i}`);
+                const wakEl = document.getElementById(`b_waktu_${i}`);
+                if(kepEl) {
+                    const kep = kepEl.value;
+                    if(kep) stats[kep]++;
+                }
+                if(wakEl) {
+                    const waktu = parseInt(wakEl.value) || 0;
+                    stats.totalWaktu += waktu;
+                }
             }
 
             const total = num || 1;
@@ -660,7 +669,6 @@
             `;
         }
 
-
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const msgEl = document.getElementById('toast-message');
@@ -680,34 +688,35 @@
             e.preventDefault();
             const btnSubmit = document.getElementById('btn-submit');
             
-            // Collect Identitas
+            const mapelRadio = document.querySelector('input[name="mapel"]:checked');
+            const paketRadio = document.querySelector('input[name="paket"]:checked');
+            const kelayakanRadio = document.querySelector('input[name="kelayakan"]:checked');
+
             const identitas = {
                 nama: document.getElementById('id_nama').value,
                 nip: document.getElementById('id_nip').value,
                 instansi: document.getElementById('id_instansi').value,
                 jabatan: document.getElementById('id_jabatan').value,
                 tanggal: document.getElementById('id_tanggal').value,
-                mapel: document.querySelector('input[name="mapel"]:checked')?.value || '',
-                paket: document.querySelector('input[name="paket"]:checked')?.value || '',
+                mapel: mapelRadio ? mapelRadio.value : '',
+                paket: paketRadio ? paketRadio.value : '',
                 paketLainnya: document.getElementById('id_paketLainnya').value,
                 jenjang: 'SMP/MTs sederajat – pilihan ganda (A–E)',
                 jumlahButir: parseInt(document.getElementById('id_jumlahButir').value) || 20,
                 perangkat: Array.from(document.querySelectorAll('input[name="perangkat"]:checked')).map(el => el.value)
             };
 
-            // Collect Bagian A
             const bagianA = { scores: {}, notes: {} };
             ASPEK_A.forEach(aspek => {
                 if (aspek.id === 'G' && identitas.mapel !== 'Matematika') return;
                 aspek.items.forEach(item => {
-                    const score = document.querySelector(`input[name="score_${item.code}"]:checked`)?.value;
-                    const note = document.getElementById(`note_${item.code}`)?.value;
-                    if (score) bagianA.scores[item.code] = score;
-                    if (note) bagianA.notes[item.code] = note;
+                    const scoreRadio = document.querySelector(`input[name="score_${item.code}"]:checked`);
+                    const noteEl = document.getElementById(`note_${item.code}`);
+                    if (scoreRadio) bagianA.scores[item.code] = scoreRadio.value;
+                    if (noteEl) bagianA.notes[item.code] = noteEl.value;
                 });
             });
 
-            // Collect Bagian B
             const bagianB = [];
             for (let i = 1; i <= identitas.jumlahButir; i++) {
                 bagianB.push({
@@ -727,9 +736,8 @@
                 });
             }
 
-            // Collect Kesimpulan
             const kesimpulan = {
-                kelayakan: document.querySelector('input[name="kelayakan"]:checked')?.value || '',
+                kelayakan: kelayakanRadio ? kelayakanRadio.value : '',
                 saranUmum: document.getElementById('id_saranUmum').value,
                 butirDiganti: document.getElementById('id_butirDiganti').value
             };
@@ -743,29 +751,39 @@
 
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payload)
                 });
                 
-                const result = await response.json();
+                // Securely parse the response to prevent SyntaxErrors
+                const textResponse = await response.text();
+                let result = {};
+                if (textResponse) {
+                    try {
+                        result = JSON.parse(textResponse);
+                    } catch (err) {
+                        throw new Error("Respons server tidak valid.");
+                    }
+                } else {
+                    throw new Error("Respons server kosong.");
+                }
                 
                 if (result.status === 'success') {
                     showToast('✅ Data berhasil disimpan!');
                     window.scrollTo({top: 0, behavior: 'smooth'});
                     document.getElementById('validation-form').reset();
-                    initForm(); // re-init defaults
+                    initForm(); 
                 } else {
-                    showToast('Gagal: ' + result.message, 'error');
+                    showToast('Gagal: ' + (result.message || 'Error yang tidak diketahui'), 'error');
                 }
             } catch (error) {
                 console.error(error);
-                showToast('Error koneksi. Pastikan URL Script benar.', 'error');
+                showToast('Error koneksi. Pastikan URL Script Google Apps benar.', 'error');
             } finally {
                 btnSubmit.disabled = false;
                 btnSubmit.innerText = '💾 Simpan Hasil Validasi';
                 btnSubmit.classList.remove('opacity-75');
             }
         }
-
 
         function switchTab(tabId) {
             document.getElementById('view-form').classList.add('hidden');
@@ -798,11 +816,9 @@
         }
 
         async function fetchDashboardData() {
-            const tbody = document.getElementById('tbody-dashboard');
             const loading = document.getElementById('dashboard-loading');
             const empty = document.getElementById('dashboard-empty');
             const container = document.getElementById('dashboard-table-container');
-            const btnExcel = document.getElementById('btn-export-excel');
             
             container.classList.add('hidden');
             empty.classList.add('hidden');
@@ -810,25 +826,40 @@
             
             try {
                 const response = await fetch(`${SCRIPT_URL}?action=getData`);
-                const result = await response.json();
+                const textResponse = await response.text();
+                let result = { status: 'error' };
                 
-                if (result.status === 'success') {
+                if(textResponse) {
+                    try {
+                        result = JSON.parse(textResponse);
+                    } catch(e) {
+                        console.warn('JSON Parse failed, falling back to empty.', e);
+                    }
+                }
+                
+                if (result.status === 'success' && result.data) {
                     dashboardData = result.data;
                 } else {
                     dashboardData = [];
                 }
             } catch (error) {
-                console.warn('Backend fetch failed, using demo data.', error);
-                dashboardData = [
-                    { "Nama Validator": "Demo User, M.Pd", "Instansi": "Universitas Negeri Gorontalo", "Mata Pelajaran": "Matematika", "Paket Naskah": "1", "Jumlah Butir": 20, "Tanggal Validasi": new Date().toISOString() },
-                    { "Nama Validator": "Budi Santoso, S.Pd", "Instansi": "SMPN 1 Gorontalo", "Mata Pelajaran": "IPA", "Paket Naskah": "2", "Jumlah Butir": 30, "Tanggal Validasi": new Date().toISOString() }
-                ];
+                console.warn('Backend fetch failed, using empty data.', error);
+                dashboardData = [];
             }
 
             loading.classList.add('hidden');
-            
-            if(dashboardData.length === 0) {
+            renderDashboardTable();
+        }
+
+        function renderDashboardTable() {
+            const tbody = document.getElementById('tbody-dashboard');
+            const empty = document.getElementById('dashboard-empty');
+            const container = document.getElementById('dashboard-table-container');
+            const btnExcel = document.getElementById('btn-export-excel');
+
+            if(!dashboardData || dashboardData.length === 0) {
                 empty.classList.remove('hidden');
+                container.classList.add('hidden');
                 btnExcel.disabled = true;
                 btnExcel.classList.add('opacity-50', 'cursor-not-allowed');
             } else {
@@ -838,6 +869,8 @@
                 
                 tbody.innerHTML = dashboardData.map((row, idx) => {
                     const dateStr = row["Tanggal Validasi"] ? new Date(row["Tanggal Validasi"]).toLocaleDateString('id-ID') : '-';
+                    const rowId = row.ID || row.id || ''; 
+                    
                     return `
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3">${dateStr}</td>
@@ -846,9 +879,14 @@
                             <td class="px-4 py-3">${row["Mata Pelajaran"] || '-'}</td>
                             <td class="px-4 py-3 text-center">${row["Paket Naskah"] || row["Paket Lainnya"] || '-'}</td>
                             <td class="px-4 py-3 text-center">
-                                <button onclick="exportToPDF(${idx})" class="px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs hover:bg-red-100 transition font-bold shadow-sm">
-                                    📄 PDF
-                                </button>
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="exportToPDF(${idx})" class="px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded text-xs hover:bg-red-100 transition font-bold shadow-sm" title="Ekspor PDF">
+                                        📄 PDF
+                                    </button>
+                                    <button onclick="promptDelete('${rowId}')" class="px-3 py-1 bg-gray-50 text-gray-600 border border-gray-200 rounded text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition font-bold shadow-sm" title="Hapus Data">
+                                        🗑️
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -856,8 +894,64 @@
             }
         }
 
+        function promptDelete(id) {
+            if(!id) {
+                showToast('Gagal: ID data tidak ditemukan.', 'error');
+                return;
+            }
+            targetDeleteId = id;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            targetDeleteId = null;
+            document.getElementById('delete-modal').classList.add('hidden');
+        }
+
+        async function executeDelete() {
+            if(!targetDeleteId) return;
+            
+            const btn = document.getElementById('btn-confirm-delete');
+            btn.disabled = true;
+            btn.innerText = 'Menghapus...';
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'delete', id: targetDeleteId })
+                });
+                
+                const textResponse = await response.text();
+                let result = {};
+                if(textResponse) {
+                    try {
+                        result = JSON.parse(textResponse);
+                    } catch(e) {
+                        throw new Error("Respons server tidak valid saat menghapus.");
+                    }
+                } else {
+                    throw new Error("Respons server kosong.");
+                }
+                
+                if (result.status === 'success') {
+                    showToast('✅ Data berhasil dihapus!');
+                    dashboardData = dashboardData.filter(row => (row.ID || row.id) !== targetDeleteId);
+                    renderDashboardTable();
+                } else {
+                    showToast('Gagal menghapus: ' + (result.message || ''), 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal menghapus akibat error koneksi/server.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Ya, Hapus';
+                closeDeleteModal();
+            }
+        }
+
         function exportToExcel() {
-            if (dashboardData.length === 0) return;
+            if (!dashboardData || dashboardData.length === 0) return;
             try {
                 showToast('Mengekspor ke Excel...', 'success');
                 const ws = XLSX.utils.json_to_sheet(dashboardData);
@@ -880,13 +974,11 @@
                 const doc = new jsPDF('p', 'pt', 'a4');
                 const margins = { top: 40, bottom: 40, left: 40, right: 40 };
                 
-                // Header
                 doc.setFontSize(14);
                 doc.setFont('helvetica', 'bold');
                 doc.text("HASIL VALIDASI INSTRUMEN", 297, margins.top, { align: 'center' });
                 doc.text("OLIMPIADE AL ISHLAH GORONTALO 2026", 297, margins.top + 20, { align: 'center' });
                 
-                // Content
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
                 let yPos = margins.top + 60;
@@ -910,13 +1002,11 @@
 
                 yPos = doc.lastAutoTable.finalY + 25;
 
-                // Additional Info
                 doc.setFont('helvetica', 'italic');
                 doc.setFontSize(9);
                 doc.text("Catatan: Ini adalah dokumen ringkasan hasil validasi. Detail evaluasi per butir", margins.left, yPos);
                 doc.text("dan catatan spesifik tersimpan di dalam sistem database panitia pusat.", margins.left, yPos + 12);
                 
-                // Signatures
                 yPos += 70;
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(10);
@@ -925,7 +1015,6 @@
                 doc.text("Validator,", 400, yPos + 15);
                 doc.text(`( ${dataRow["Nama Validator"] || "__________________________"} )`, 400, yPos + 75);
 
-                // Save
                 const safeName = (dataRow["Nama Validator"] || "Unknown").replace(/[^a-zA-Z0-9]/g, '_');
                 doc.save(`Validasi_${dataRow["Mata Pelajaran"]}_${safeName}.pdf`);
             } catch (err) {
@@ -936,7 +1025,6 @@
 
         // Initialize on load
         window.onload = initForm;
-
     </script>
 </body>
 </html>
