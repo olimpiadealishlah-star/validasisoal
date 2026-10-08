@@ -304,14 +304,14 @@
     <footer class="mt-8 py-6 text-center border-t border-gray-200 bg-white">
         <div class="max-w-7xl mx-auto px-4">
             <p class="text-sm text-gray-500">
-                Pengembang Instrumen Validasi: <span class="font-semibold text-gray-700">Rahmat Djafar, S.Pd., Gr</span>
+                Rahmat Djafar, S.Pd., Gr <span class="font-semibold text-gray-700">@2026</span>
             </p>
         </div>
     </footer>
 
     <script>
         // CONFIGURATION
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzgDKZmGfapJtjTxkMGVn8RajSOIHVf2YHcPNMntPiUj3C-bVzZHy8dnooPvsglgfur/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyExMVnQbe8nOGHmMFk_UPquaYEveklIJ1s8Zu-Kjr0YRKufIXv5JQMJv2_7FgJCakH/exec';
         const ADMIN_ACCESS_CODE = 'ungguldanberakhlak';
 
         // CONSTANTS
@@ -954,10 +954,31 @@
             if (!dashboardData || dashboardData.length === 0) return;
             try {
                 showToast('Mengekspor ke Excel...', 'success');
-                const ws = XLSX.utils.json_to_sheet(dashboardData);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Rekap Validasi");
-                XLSX.writeFile(wb, "Rekap_Validasi_Olimpiade.xlsx");
+                
+                const identitas = dashboardData.map(d => {
+                    const copy = { ...d };
+                    delete copy.bagianA;
+                    delete copy.bagianB;
+                    delete copy.kesimpulan;
+                    return copy;
+                });
+                const wsIdentitas = XLSX.utils.json_to_sheet(identitas);
+                XLSX.utils.book_append_sheet(wb, wsIdentitas, "Identitas");
+
+                const bagianA = [];
+                dashboardData.forEach(d => { if(d.bagianA) bagianA.push(d.bagianA); });
+                if(bagianA.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bagianA), "Bagian A");
+
+                const bagianB = [];
+                dashboardData.forEach(d => { if(d.bagianB) d.bagianB.forEach(b => bagianB.push(b)); });
+                if(bagianB.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bagianB), "Bagian B");
+
+                const kesimpulan = [];
+                dashboardData.forEach(d => { if(d.kesimpulan) kesimpulan.push(d.kesimpulan); });
+                if(kesimpulan.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kesimpulan), "Kesimpulan");
+
+                XLSX.writeFile(wb, "Rekap_Validasi_Olimpiade_Lengkap.xlsx");
             } catch (err) {
                 console.error(err);
                 showToast('Gagal mengekspor Excel.', 'error');
@@ -969,7 +990,7 @@
             if(!dataRow) return;
 
             try {
-                showToast('Menghasilkan PDF...', 'success');
+                showToast('Menghasilkan PDF Lengkap...', 'success');
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
                 const margins = { top: 40, bottom: 40, left: 40, right: 40 };
@@ -981,7 +1002,7 @@
                 
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
-                let yPos = margins.top + 60;
+                let yPos = margins.top + 50;
                 
                 const identitasData = [
                     ["Nama Validator", dataRow["Nama Validator"] || "-"],
@@ -999,18 +1020,99 @@
                     styles: { fontSize: 10, cellPadding: 4, textColor: [40, 40, 40] },
                     columnStyles: { 0: { fontStyle: 'bold', cellWidth: 120 } }
                 });
+                yPos = doc.lastAutoTable.finalY + 15;
 
-                yPos = doc.lastAutoTable.finalY + 25;
+                const bodyA = [];
+                const bagianA = dataRow.bagianA || {};
+                ASPEK_A.forEach(aspek => {
+                    if (aspek.id === 'G' && dataRow["Mata Pelajaran"] !== 'Matematika') return;
+                    bodyA.push([{ content: aspek.title, colSpan: 3, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }]);
+                    aspek.items.forEach(item => {
+                        const score = bagianA[item.code] || "-";
+                        const note = bagianA[`Catatan_${item.code}`] || "-";
+                        bodyA.push([item.code, score, note]);
+                    });
+                });
 
-                doc.setFont('helvetica', 'italic');
-                doc.setFontSize(9);
-                doc.text("Catatan: Ini adalah dokumen ringkasan hasil validasi. Detail evaluasi per butir", margins.left, yPos);
-                doc.text("dan catatan spesifik tersimpan di dalam sistem database panitia pusat.", margins.left, yPos + 12);
-                
-                yPos += 70;
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text("BAGIAN A - VALIDASI KESELURUHAN", margins.left, yPos);
+                doc.autoTable({
+                    startY: yPos + 8,
+                    head: [['Kode', 'Skor', 'Catatan / Saran']],
+                    body: bodyA,
+                    theme: 'grid',
+                    styles: { fontSize: 8 },
+                    headStyles: { fillColor: [59, 130, 246] },
+                    columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 40, halign: 'center' } },
+                    margin: margins
+                });
+                yPos = doc.lastAutoTable.finalY + 15;
+
+                let rawBagianB = dataRow.bagianB || [];
+                rawBagianB.sort((a,b) => parseInt(a["Nomor Butir"]) - parseInt(b["Nomor Butir"]));
+                const bodyB = rawBagianB.map(b => [
+                    b["Nomor Butir"], b.K1, b.K2, b.K3, b.K4, b.K5, b.K6, b.K7, 
+                    b.Kesulitan, b.Waktu, b.Keputusan, b["Kunci Validator"], b.Catatan
+                ]);
+
+                doc.text("BAGIAN B - VALIDASI PER BUTIR", margins.left, yPos);
+                doc.autoTable({
+                    startY: yPos + 8,
+                    head: [['No', 'K1', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7', 'Kesulit', 'Waktu', 'Kptsn', 'Kunci', 'Catatan']],
+                    body: bodyB,
+                    theme: 'grid',
+                    styles: { fontSize: 7, cellPadding: 2 },
+                    headStyles: { fillColor: [59, 130, 246], halign: 'center' },
+                    columnStyles: { 
+                        0: { cellWidth: 20, halign: 'center' },
+                        1: { cellWidth: 20, halign: 'center' },
+                        2: { cellWidth: 20, halign: 'center' },
+                        3: { cellWidth: 20, halign: 'center' },
+                        4: { cellWidth: 20, halign: 'center' },
+                        5: { cellWidth: 20, halign: 'center' },
+                        6: { cellWidth: 20, halign: 'center' },
+                        7: { cellWidth: 20, halign: 'center' },
+                        8: { cellWidth: 35, halign: 'center' },
+                        9: { cellWidth: 30, halign: 'center' },
+                        10: { cellWidth: 30, halign: 'center' },
+                        11: { cellWidth: 30, halign: 'center' }
+                    },
+                    margin: margins
+                });
+                yPos = doc.lastAutoTable.finalY + 15;
+
+                if (yPos > doc.internal.pageSize.getHeight() - 150) {
+                    doc.addPage();
+                    yPos = margins.top;
+                }
+
+                const kesimpulan = dataRow.kesimpulan || {};
+                const bodyC = [
+                    ["Kesimpulan Kelayakan", kesimpulan["Kesimpulan Kelayakan"] || "-"],
+                    ["Saran Umum", kesimpulan["Saran Umum"] || "-"],
+                    ["Butir Diganti", kesimpulan["Butir Diganti"] || "-"]
+                ];
+
+                doc.text("KESIMPULAN DAN SARAN", margins.left, yPos);
+                doc.autoTable({
+                    startY: yPos + 8,
+                    body: bodyC,
+                    theme: 'grid',
+                    styles: { fontSize: 9 },
+                    columnStyles: { 0: { cellWidth: 120, fontStyle: 'bold', fillColor: [240, 240, 240] } },
+                    margin: margins
+                });
+                yPos = doc.lastAutoTable.finalY + 40;
+
+                if (yPos > doc.internal.pageSize.getHeight() - 80) {
+                    doc.addPage();
+                    yPos = margins.top;
+                }
+
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(10);
-                const dateStr = new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
+                const dateStr = dataRow["Tanggal Validasi"] ? new Date(dataRow["Tanggal Validasi"]).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'});
                 doc.text(`Gorontalo, ${dateStr}`, 400, yPos);
                 doc.text("Validator,", 400, yPos + 15);
                 doc.text(`( ${dataRow["Nama Validator"] || "__________________________"} )`, 400, yPos + 75);
